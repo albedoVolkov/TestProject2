@@ -13,6 +13,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import java.util.Random
 import javax.inject.Inject
 
 
@@ -40,7 +41,7 @@ class MainActivityViewModel @Inject constructor(private val factory: ItemFactory
         while (true) {
             if (count <= 15) {
                 count += 1
-                addItem()
+                addItem(false)
             } else {
                 break
             }
@@ -52,7 +53,7 @@ class MainActivityViewModel @Inject constructor(private val factory: ItemFactory
         Log.d(TAG, "service is running")
         job = MainScope().launch {
             while (true) {
-                async { addItem()}.await()
+                async { addItem(true)}.await()
                 delay(5000)
             }
         }
@@ -64,16 +65,21 @@ class MainActivityViewModel @Inject constructor(private val factory: ItemFactory
         job = null
     }
 
-
     fun setListInViewModel(list : List<ItemMainUIState>) {
         Log.d(TAG, "setListInViewModel : list - $list")
         _mainItems = list
     }
 
-    private fun addItem(){
-        number+=1
+    private fun addItem(isRandom : Boolean){
+        number += 1
         val oldList = _data.value.toMutableList()
-        oldList.add(factory.createNewItemMain(number))
+        if(isRandom) {
+            (oldList.size-1)
+            val positionR = (0 until (oldList.size-1)).random()
+            oldList.add(positionR,factory.createNewItemMain(number))
+        }else{
+            oldList.add(factory.createNewItemMain(number))
+        }
         data.value = oldList
     }
 
@@ -82,6 +88,9 @@ class MainActivityViewModel @Inject constructor(private val factory: ItemFactory
         oldList.remove(item)
         data.value = oldList
     }
+
+    private fun IntRange.random() =
+        Random().nextInt((endInclusive + 1) - start) + start
 
     override fun onCleared() {
         _data.value = listOf()
